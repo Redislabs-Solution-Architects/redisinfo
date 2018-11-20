@@ -39,7 +39,7 @@ usec/call = average CPU time consumed for each call
 
 Sample output:
 
-'''
+```
 Redis 5.0.0 (standalone) on Darwin 18.2.0 x86_64 (pid: 9257)
 uptime: 1 days, replication role: master, connected slaves: 0
 142 total connections (0 new), 2 connected, used memory: 281.28M
@@ -74,4 +74,4 @@ command            12                 0            0       604.75
 scan                5                 0            0        40.00
 auth                1                 0            0         1.00
 sort on numeric columns by pressing 1-4. press esc to exit.
-'''
+```
