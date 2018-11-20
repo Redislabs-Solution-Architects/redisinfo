@@ -21,23 +21,18 @@ The display 'refreshes' on an interval that can be changed by
 pressing +/-. You can sort the output of the commandstats by
 any of the columns by pressing the number of the column you
 wish to sort by:
-- 1 = total
-- 2 = since last int
-- 3 = calls/sec
-- 4 = usec/call
-
-- total = the total number of times the command has been called
-    since Redis was started
-- since last int = the number of times the command was called
-    since the previous poll/interval
-- calls/sec = a calculated approximation of the number of times
+- 1 = total = the total number of times the command has been
+    called since Redis was started
+- 2 = since last int = the number of times the command was
+    called since the previous poll/interval
+- 3 = calls/sec = a calculated approximation of the number of times
     the command was called per second. This is calulated by
     taking the 'since last int' number and dividing by the
     approximate number of seconds since last refresh. this is
     not a highly accurate number, just an approximation.
-- usec/call = average CPU time consumed for each call
+- 4 = usec/call = average CPU time consumed for each call
 
-Sample output:
+### Sample output:
 
 ```
 Redis 5.0.0 (standalone) on Darwin 18.2.0 x86_64 (pid: 9257)
