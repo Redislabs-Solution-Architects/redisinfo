@@ -24,17 +24,6 @@ else:
     import atexit
     from select import select
 
-class RedisInfo(redis.StrictRedis):
-    '''
-    Extend StrictRedis to make info calls pretty
-    '''
-    def info(self):
-        return self.execute_command('info')
-
-    def commandstats(self):
-        return self.execute_command('info commandstats')
-
-
 class KBHit:
     '''
     Class to handle the single character input. Found in several places,
@@ -102,24 +91,33 @@ class KBHit:
 def connect_to_redis(**conf):
     try:
         # r = redis.StrictRedis(**conf)
-        r = RedisInfo(**conf)
+        r = redis.StrictRedis(**conf)
         r.ping()
     except Exception as e:
         print e
         exit()
     return r
 
-# XXX: need to actually implement this
-# for now just passing all args with no processing or checking
 def get_command_line_args():
+    '''
+    Function to get the command line arguments
+
+    XXX: possibly add more sophisticated arg processing in the future
+    for now just passing all args with no processing or checking
+    '''
     return sys.argv
 
 def get_connection_config(args):
     '''
+    Function to extract the Redis connection params from the args
+
     Expecting a list where:
     args[0] = *ignored*
-    args[1] = redis-endpoing:port
+    args[1] = host:port
     args[2] = password (optional)
+    args[n] = *ignored*
+
+    XXX: current arg error checking is minimal
     '''
 
     auth = ''
@@ -130,67 +128,6 @@ def get_connection_config(args):
         'host': host, 'port': port, 'password': auth
     }
     return connection_config
-
-def info_to_dict(infotxt):
-    '''
-    Convert Redis 'info' to python dictionary format
-
-    Expected input is a string which is the output of the Redis 'info' command
-    or any of its variants (i.e. 'info server', etc.)
-    '''
-    section = None
-    infodict = {}
-    for line in infotxt.splitlines():
-        if line.startswith(' ') or line == '':
-            continue
-
-        if line.startswith('#'):
-            section = line.split('#')[1].strip().lower()
-            # infodict[section] = {}
-            continue
-
-        if section is None:
-            # this should never happen
-            print "error parsing info! line is =>{}<= but no section set!".format(line)
-            continue
-
-        # print "adding =>{}<=".format(line)
-        k, v = line.split(':')
-        if v is None:
-            v = 'none'
-        infodict[k] = v
-
-    return infodict
-
-def cmdstats_to_dict(cmdstats):
-    '''
-    Convert Redis 'info commandstats' output to python dictionary
-    in the following format:
-    csdict = {
-        command: {
-            calls: number of calls,
-            usec: usec data,
-            usec_per_call: usec/call data
-        }
-    }
-    '''
-    csdict = {}
-    for line in cmdstats.splitlines():
-        if line.startswith('#') or line.startswith(' '):
-            continue
-
-        [cmd_calls, usec, usecpc] = line.split(',')
-        [cmd, calls] = cmd_calls.split(':')
-        # remove 'cmdstats_' part of the command
-        cmd = cmd.split('_')[1]
-        csdict.update({
-            cmd: {
-                'calls': calls.split('=')[1],
-                'usec': usec.split('=')[1],
-                'usec_per_call': usecpc.split('=')[1]
-            }
-        })
-    return csdict
 
 def display_commandstats(cslast, csthis, sort, calcint, displayint):
     '''
@@ -213,7 +150,9 @@ def display_commandstats(cslast, csthis, sort, calcint, displayint):
             calls = data['calls']
             diff = int(calls) - int(cslast[call]['calls'])
             usecpm = data['usec_per_call']
-            display.append((call, calls, diff, diff/calcint, usecpm))
+            display.append(
+                (call.split('_')[1],calls, diff, diff/calcint, usecpm)
+            )
 
     #print "\n"
     headers = ['call', 'total', 'since last int', 'calls/sec', 'usec/call']
@@ -261,7 +200,7 @@ def main():
     sort = 1
     args = get_command_line_args()
     connect_config = get_connection_config(args)
-    rinfo = connect_to_redis(**connect_config)
+    redis = connect_to_redis(**connect_config)
     print "Connected to Redis."
     cslast = False
     csthis = False
@@ -273,8 +212,8 @@ def main():
     while True:
 
         if cslast is False:
-            cslast = cmdstats_to_dict(rinfo.commandstats())
-            infolast = info_to_dict(rinfo.info())
+            cslast = redis.info('commandstats')
+            infolast = redis.info()
             display_header(infolast)
             print "Got first commandstats, waiting {} seconds to get the next.".format(interval)
             continue
@@ -317,10 +256,10 @@ def main():
                 thisint = 1
 
         # get commandstats
-        csthis = cmdstats_to_dict(rinfo.commandstats())
+        csthis = redis.info('commandstats')
 
         ## display header
-        infothis = info_to_dict(rinfo.info())
+        infothis = redis.info()
         display_header(infothis, infolast)
 
         ## display commandstats
