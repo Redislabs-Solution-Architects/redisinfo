@@ -4,6 +4,10 @@ Python script producing a 'top-like' output for Redis info commandstats
 Redis documentation on the INFO command which is providing the data
 used by this script is here: https://redis.io/commands/info
 
+Prerequisites:
+- [redis](https://github.com/andymccurdy/redis-py "pip install redis")
+- [tabulate](https://pypi.org/project/tabulate/ "pip install tabulate")
+
 Script requires at least 1 argument on the command line which is
 host:port of the Redis you wish to connect to. Optionally, you can
 provide a second argument which is the password to use to AUTH to
