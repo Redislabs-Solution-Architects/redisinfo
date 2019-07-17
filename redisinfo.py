@@ -142,6 +142,28 @@ def display_commandstats(cslast, csthis, sort, calcint, displayint):
               we can refresh sooner than displayint
     displayint = interval to use for display purposes
     '''
+
+    mkolist = [
+        'bitop',
+        'blpop',
+        'brpop',
+        'brpoplpush',
+        'msetnx',
+        'rpoplpush',
+        'sdiff',
+        'sdiffstore',
+        'sinter',
+        'sinterstore',
+        'smove',
+        'sort',
+        'sunion',
+        'xread',
+        'xreadgroup',
+        'zinterstore',
+        'zunionstore',
+        'multi',
+        'exec'
+    ]
     display = []
     for call, data in csthis.iteritems():
         # print "processing call =>{}<= data =>{}<=".format(call, data)
@@ -150,8 +172,11 @@ def display_commandstats(cslast, csthis, sort, calcint, displayint):
             calls = data['calls']
             diff = int(calls) - int(cslast[call]['calls'])
             usecpm = data['usec_per_call']
+            callstr = call.split('_')[1]
+            if callstr in mkolist:
+                callstr = '* ' + callstr + ' *'
             display.append(
-                (call.split('_')[1],calls, diff, diff/calcint, usecpm)
+                (callstr ,calls, diff, diff/calcint, usecpm)
             )
 
     #print "\n"
